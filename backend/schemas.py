@@ -29,6 +29,10 @@ class OrderOut(OrderIn):
     status: str
 
 
+class OrderUpdate(OrderIn):
+    status: str
+
+
 class SupplierIn(BaseModel):
     name: str
     email: str

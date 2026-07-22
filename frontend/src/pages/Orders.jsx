@@ -3,7 +3,8 @@ import axios from "axios"
 
 const API = import.meta.env.VITE_API_URL
 
-const emptyForm = { customer: "", product: "", quantity: "" }
+const emptyForm = { customer: "", product: "", quantity: "", status: "pending" }
+const STATUS_OPTIONS = ["pending", "packing", "shipped", "delivered"]
 
 const inputStyle = {
   background: "#0d1117",
@@ -15,12 +16,24 @@ const inputStyle = {
   width: "100%",
 }
 
+const actionButtonStyle = {
+  background: "transparent",
+  border: "1px solid #1f2937",
+  borderRadius: 6,
+  color: "#9ca3af",
+  padding: "4px 10px",
+  fontSize: 12,
+  cursor: "pointer",
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([])
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     axios.get(`${API}/api/orders`).then(r => setOrders(r.data))
@@ -35,26 +48,79 @@ export default function Orders() {
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
+  const cancelForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
+    setSubmitError(null)
+  }
+
+  const openAddForm = () => {
+    if (showForm && editingId === null) {
+      cancelForm()
+      return
+    }
+    setEditingId(null)
+    setForm(emptyForm)
+    setSubmitError(null)
+    setShowForm(true)
+  }
+
+  const openEditForm = (order) => {
+    setEditingId(order.id)
+    setForm({
+      customer: order.customer,
+      product: order.product,
+      quantity: String(order.quantity),
+      status: order.status,
+    })
+    setSubmitError(null)
+    setShowForm(true)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     setSubmitError(null)
 
-    const payload = {
-      customer: form.customer,
-      product: form.product,
-      quantity: Number(form.quantity),
-    }
-
     try {
-      const r = await axios.post(`${API}/api/orders`, payload)
-      setOrders(o => [...o, r.data])
-      setForm(emptyForm)
-      setShowForm(false)
+      if (editingId !== null) {
+        const payload = {
+          customer: form.customer,
+          product: form.product,
+          quantity: Number(form.quantity),
+          status: form.status,
+        }
+        const r = await axios.put(`${API}/api/orders/${editingId}`, payload)
+        setOrders(os => os.map(o => (o.id === editingId ? r.data : o)))
+      } else {
+        const payload = {
+          customer: form.customer,
+          product: form.product,
+          quantity: Number(form.quantity),
+        }
+        const r = await axios.post(`${API}/api/orders`, payload)
+        setOrders(o => [...o, r.data])
+      }
+      cancelForm()
     } catch {
-      setSubmitError("Couldn't place the order. Please try again.")
+      setSubmitError(editingId !== null ? "Couldn't update the order. Please try again." : "Couldn't place the order. Please try again.")
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this order?")) return
+    setDeletingId(id)
+    try {
+      await axios.delete(`${API}/api/orders/${id}`)
+      setOrders(os => os.filter(o => o.id !== id))
+      if (editingId === id) cancelForm()
+    } catch {
+      window.alert("Couldn't delete the order. Please try again.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -63,7 +129,7 @@ export default function Orders() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 className="text-2xl font-semibold">Orders</h1>
         <button
-          onClick={() => setShowForm(s => !s)}
+          onClick={openAddForm}
           style={{
             background: "#1d4ed8",
             color: "#ffffff",
@@ -75,7 +141,7 @@ export default function Orders() {
             cursor: "pointer",
           }}
         >
-          {showForm ? "Cancel" : "+ New Order"}
+          {showForm && editingId === null ? "Cancel" : "+ New Order"}
         </button>
       </div>
 
@@ -88,11 +154,14 @@ export default function Orders() {
             borderRadius: 12,
             padding: 16,
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: editingId !== null ? "repeat(4, 1fr)" : "repeat(3, 1fr)",
             gap: 12,
             alignItems: "end",
           }}
         >
+          <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#9ca3af" }}>
+            {editingId !== null ? `Editing order #${editingId}` : "New order"}
+          </div>
           <div>
             <label style={{ display: "block", fontSize: 12, color: "#9ca3af", marginBottom: 4 }}>Customer</label>
             <input style={inputStyle} value={form.customer} onChange={handleChange("customer")} required />
@@ -105,6 +174,14 @@ export default function Orders() {
             <label style={{ display: "block", fontSize: 12, color: "#9ca3af", marginBottom: 4 }}>Quantity</label>
             <input style={inputStyle} type="number" value={form.quantity} onChange={handleChange("quantity")} required />
           </div>
+          {editingId !== null && (
+            <div>
+              <label style={{ display: "block", fontSize: 12, color: "#9ca3af", marginBottom: 4 }}>Status</label>
+              <select style={inputStyle} value={form.status} onChange={handleChange("status")}>
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="submit"
@@ -121,8 +198,13 @@ export default function Orders() {
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? "Placing..." : "Place Order"}
+              {submitting ? "Saving..." : editingId !== null ? "Update Order" : "Place Order"}
             </button>
+            {editingId !== null && (
+              <button type="button" onClick={cancelForm} style={{ ...actionButtonStyle, padding: "8px 16px" }}>
+                Cancel
+              </button>
+            )}
             {submitError && <span style={{ color: "#fca5a5", fontSize: 13 }}>{submitError}</span>}
           </div>
         </form>
@@ -137,6 +219,7 @@ export default function Orders() {
               <th className="text-left pb-3">Product</th>
               <th className="text-left pb-3">Qty</th>
               <th className="text-left pb-3">Status</th>
+              <th className="text-left pb-3">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -150,6 +233,18 @@ export default function Orders() {
                   <span className={`text-xs px-2 py-1 rounded-full ${statusColor[o.status]}`}>
                     {o.status}
                   </span>
+                </td>
+                <td className="py-3">
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={actionButtonStyle} onClick={() => openEditForm(o)}>Edit</button>
+                    <button
+                      style={{ ...actionButtonStyle, color: "#fca5a5", opacity: deletingId === o.id ? 0.6 : 1 }}
+                      onClick={() => handleDelete(o.id)}
+                      disabled={deletingId === o.id}
+                    >
+                      {deletingId === o.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -15,12 +15,24 @@ const inputStyle = {
   width: "100%",
 }
 
+const actionButtonStyle = {
+  background: "transparent",
+  border: "1px solid #1f2937",
+  borderRadius: 6,
+  color: "#9ca3af",
+  padding: "4px 10px",
+  fontSize: 12,
+  cursor: "pointer",
+}
+
 export default function Inventory() {
   const [products, setProducts] = useState([])
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     axios.get(`${API}/api/inventory`).then(r => setProducts(r.data))
@@ -33,6 +45,37 @@ export default function Inventory() {
   }
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  const openAddForm = () => {
+    if (showForm && editingId === null) {
+      cancelForm()
+      return
+    }
+    setEditingId(null)
+    setForm(emptyForm)
+    setSubmitError(null)
+    setShowForm(true)
+  }
+
+  const openEditForm = (product) => {
+    setEditingId(product.id)
+    setForm({
+      name: product.name,
+      sku: product.sku,
+      current_stock: String(product.current_stock),
+      reorder_point: String(product.reorder_point),
+      lead_time_days: String(product.lead_time_days),
+    })
+    setSubmitError(null)
+    setShowForm(true)
+  }
+
+  const cancelForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
+    setSubmitError(null)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -48,14 +91,32 @@ export default function Inventory() {
     }
 
     try {
-      const r = await axios.post(`${API}/api/inventory`, payload)
-      setProducts(p => [...p, r.data])
-      setForm(emptyForm)
-      setShowForm(false)
+      if (editingId !== null) {
+        const r = await axios.put(`${API}/api/inventory/${editingId}`, payload)
+        setProducts(ps => ps.map(p => (p.id === editingId ? r.data : p)))
+      } else {
+        const r = await axios.post(`${API}/api/inventory`, payload)
+        setProducts(p => [...p, r.data])
+      }
+      cancelForm()
     } catch {
-      setSubmitError("Couldn't save the product. Please try again.")
+      setSubmitError(editingId !== null ? "Couldn't update the product. Please try again." : "Couldn't save the product. Please try again.")
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this product?")) return
+    setDeletingId(id)
+    try {
+      await axios.delete(`${API}/api/inventory/${id}`)
+      setProducts(ps => ps.filter(p => p.id !== id))
+      if (editingId === id) cancelForm()
+    } catch {
+      window.alert("Couldn't delete the product. Please try again.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -64,7 +125,7 @@ export default function Inventory() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 className="text-2xl font-semibold">Inventory</h1>
         <button
-          onClick={() => setShowForm(s => !s)}
+          onClick={openAddForm}
           style={{
             background: "#1d4ed8",
             color: "#ffffff",
@@ -76,7 +137,7 @@ export default function Inventory() {
             cursor: "pointer",
           }}
         >
-          {showForm ? "Cancel" : "+ Add Product"}
+          {showForm && editingId === null ? "Cancel" : "+ Add Product"}
         </button>
       </div>
 
@@ -94,6 +155,9 @@ export default function Inventory() {
             alignItems: "end",
           }}
         >
+          <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#9ca3af" }}>
+            {editingId !== null ? "Editing product" : "New product"}
+          </div>
           <div>
             <label style={{ display: "block", fontSize: 12, color: "#9ca3af", marginBottom: 4 }}>Name</label>
             <input style={inputStyle} value={form.name} onChange={handleChange("name")} required />
@@ -130,8 +194,17 @@ export default function Inventory() {
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? "Saving..." : "Save Product"}
+              {submitting ? "Saving..." : editingId !== null ? "Update Product" : "Save Product"}
             </button>
+            {editingId !== null && (
+              <button
+                type="button"
+                onClick={cancelForm}
+                style={{ ...actionButtonStyle, padding: "8px 16px" }}
+              >
+                Cancel
+              </button>
+            )}
             {submitError && <span style={{ color: "#fca5a5", fontSize: 13 }}>{submitError}</span>}
           </div>
         </form>
@@ -146,6 +219,7 @@ export default function Inventory() {
               <th className="text-left pb-3">Stock</th>
               <th className="text-left pb-3">Reorder Point</th>
               <th className="text-left pb-3">Status</th>
+              <th className="text-left pb-3">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -159,6 +233,18 @@ export default function Inventory() {
                   <span className={`text-xs px-2 py-1 rounded-full ${statusColor[p.status]}`}>
                     {p.status}
                   </span>
+                </td>
+                <td className="py-3">
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={actionButtonStyle} onClick={() => openEditForm(p)}>Edit</button>
+                    <button
+                      style={{ ...actionButtonStyle, color: "#fca5a5", opacity: deletingId === p.id ? 0.6 : 1 }}
+                      onClick={() => handleDelete(p.id)}
+                      disabled={deletingId === p.id}
+                    >
+                      {deletingId === p.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
