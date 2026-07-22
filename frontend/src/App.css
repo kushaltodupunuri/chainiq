@@ -1,0 +1,30 @@
+.sidebar { position: fixed; left: 0; top: 0; width: 200px; height: 100vh; background: #111827; border-right: 1px solid #1f2937; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+.logo { font-size: 18px; font-weight: 600; color: white; margin-bottom: 24px; padding: 0 8px; }
+.logo span { color: #60a5fa; }
+.nav-link { display: block; padding: 8px 12px; border-radius: 8px; color: #9ca3af; text-decoration: none; font-size: 14px; transition: all 0.15s; }
+.nav-link:hover { background: #1f2937; color: white; }
+.nav-link.active { background: #1d4ed8; color: white; }
+.main { margin-left: 200px; padding: 32px; }
+.page-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
+.alert-banner { background: #422006; border: 1px solid #92400e; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; font-size: 14px; color: #fde68a; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.metric-card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; }
+.metric-label { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+.metric-value { font-size: 28px; font-weight: 600; }
+.two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+.card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; }
+.card-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: #6b7280; font-size: 12px; padding-bottom: 10px; border-bottom: 1px solid #1f2937; font-weight: 500; }
+td { padding: 10px 0; border-bottom: 1px solid #1f2937; color: #d1d5db; }
+tr:last-child td { border: none; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+.badge-green { background: #14532d; color: #86efac; }
+.badge-yellow { background: #713f12; color: #fde68a; }
+.badge-blue { background: #1e3a5f; color: #93c5fd; }
+.badge-gray { background: #1f2937; color: #9ca3af; }
+.badge-red { background: #7f1d1d; color: #fca5a5; }
+.alert-item { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 6px; }
+.alert-critical { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+.alert-warning { background: #713f12; color: #fde68a; border: 1px solid #92400e; }
+.alert-info { background: #1e3a5f; color: #93c5fd; border: 1px solid #1e40af; }
