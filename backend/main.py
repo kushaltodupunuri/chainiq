@@ -1,7 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from database import Base, engine
+from routes import inventory, orders
+from seed import seed_if_empty
+
+Base.metadata.create_all(bind=engine)
+seed_if_empty()
+
 app = FastAPI(title="ChainIQ API")
+app.include_router(inventory.router)
+app.include_router(orders.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,26 +32,6 @@ def get_metrics():
         "supplier_otif_pct": 94,
         "return_rate_pct": 2.1
     }
-
-@app.get("/api/inventory")
-def get_inventory():
-    return [
-        {"id": 1, "name": "Organic Oats 1kg", "sku": "OAT001", "current_stock": 5, "reorder_point": 20, "status": "Critical"},
-        {"id": 2, "name": "Brown Rice 5kg", "sku": "RIC002", "current_stock": 45, "reorder_point": 15, "status": "In Stock"},
-        {"id": 3, "name": "Whole Milk 1L", "sku": "MLK003", "current_stock": 12, "reorder_point": 30, "status": "Low"},
-        {"id": 4, "name": "Olive Oil 500ml", "sku": "OIL004", "current_stock": 60, "reorder_point": 10, "status": "In Stock"},
-        {"id": 5, "name": "Sourdough Bread", "sku": "BRD005", "current_stock": 8, "reorder_point": 25, "status": "Critical"},
-    ]
-
-@app.get("/api/orders")
-def get_orders():
-    return [
-        {"id": 4821, "customer": "Walk-in", "product": "Organic Oats 1kg", "quantity": 2, "status": "delivered"},
-        {"id": 4820, "customer": "Online - Shopify", "product": "Olive Oil 500ml", "quantity": 1, "status": "shipped"},
-        {"id": 4819, "customer": "Walk-in", "product": "Whole Milk 1L", "quantity": 3, "status": "delivered"},
-        {"id": 4818, "customer": "Online - Shopify", "product": "Brown Rice 5kg", "quantity": 1, "status": "packing"},
-        {"id": 4817, "customer": "Wholesale - ABC Co", "product": "Sourdough Bread", "quantity": 20, "status": "shipped"},
-    ]
 
 @app.get("/api/suppliers")
 def get_suppliers():

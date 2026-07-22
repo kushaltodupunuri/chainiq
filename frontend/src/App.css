@@ -13,6 +13,7 @@
 .metric-value { font-size: 28px; font-weight: 600; }
 .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
 .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; }
+.empty-state { color: #6b7280; font-size: 13px; padding: 16px 0; text-align: center; }
 .card-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th { text-align: left; color: #6b7280; font-size: 12px; padding-bottom: 10px; border-bottom: 1px solid #1f2937; font-weight: 500; }
