@@ -1,5 +1,5 @@
 from database import SessionLocal
-from models import Order, Product
+from models import Order, Product, Supplier
 
 
 def seed_if_empty():
@@ -21,6 +21,12 @@ def seed_if_empty():
                 Order(id=4819, customer="Walk-in", product="Whole Milk 1L", quantity=3, status="delivered"),
                 Order(id=4818, customer="Online - Shopify", product="Brown Rice 5kg", quantity=1, status="packing"),
                 Order(id=4817, customer="Wholesale - ABC Co", product="Sourdough Bread", quantity=20, status="shipped"),
+            ])
+
+        if db.query(Supplier).count() == 0:
+            db.add_all([
+                Supplier(name="Agro Fresh", email="orders@agrofresh.com", lead_time_days=5, reliability_score=92),
+                Supplier(name="FreshMart Distributors", email="supply@freshmart.com", lead_time_days=3, reliability_score=87),
             ])
 
         db.commit()

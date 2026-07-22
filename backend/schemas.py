@@ -27,3 +27,16 @@ class OrderOut(OrderIn):
 
     id: int
     status: str
+
+
+class SupplierIn(BaseModel):
+    name: str
+    email: str
+    lead_time_days: int
+    reliability_score: int
+
+
+class SupplierOut(SupplierIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int

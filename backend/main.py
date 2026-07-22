@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine
-from routes import inventory, orders
+from routes import inventory, orders, suppliers
 from seed import seed_if_empty
 
 Base.metadata.create_all(bind=engine)
@@ -11,6 +11,7 @@ seed_if_empty()
 app = FastAPI(title="ChainIQ API")
 app.include_router(inventory.router)
 app.include_router(orders.router)
+app.include_router(suppliers.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,13 +33,6 @@ def get_metrics():
         "supplier_otif_pct": 94,
         "return_rate_pct": 2.1
     }
-
-@app.get("/api/suppliers")
-def get_suppliers():
-    return [
-        {"id": 1, "name": "Agro Fresh", "email": "orders@agrofresh.com", "lead_time_days": 5, "reliability_score": 92},
-        {"id": 2, "name": "FreshMart Distributors", "email": "supply@freshmart.com", "lead_time_days": 3, "reliability_score": 87},
-    ]
 
 @app.get("/api/alerts")
 def get_alerts():
